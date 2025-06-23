@@ -17,7 +17,7 @@ bool readTable(const string& filename, vector<TableRow>& table) {
     if (!file.is_open()) return false;
 
     TableRow row;
-    while (file >> row.x >> row.T >> row.U)  // додав U, бо в структурі є U, у тебе в оригіналі не зчитувався U
+    while (file >> row.x >> row.T >> row.U)  
         table.push_back(row);
     return true;
 }
