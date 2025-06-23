@@ -1,8 +1,9 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include <cmath>
 #include <tuple>
+#include <stdexcept>  // Для std::runtime_error
 using namespace std;
 
 // Структура для збереження одного рядка з таблиці: x, T(x), U(x)
@@ -16,7 +17,7 @@ bool readTable(const string& filename, vector<TableRow>& table) {
     if (!file.is_open()) return false;
 
     TableRow row;
-    while (file >> row.x >> row.T)
+    while (file >> row.x >> row.T >> row.U)  // додав U, бо в структурі є U, у тебе в оригіналі не зчитувався U
         table.push_back(row);
     return true;
 }
@@ -38,28 +39,35 @@ pair<double, double> interpolate(const vector<TableRow>& table, double x) {
 
 // Обчислення T(x) та U(x) за значенням x, із вибором відповідного файлу
 pair<double, double> get_T_U(double x, bool& ok) {
-    vector<TableRow> table;
-    string filename;
+    try {
+        vector<TableRow> table;
+        string filename;
 
-    // Вибір файлу таблиці залежно від x
-    if (x <= 1)
-        filename = "dat_X_1_1.dat";
-    else if (x < -1) {
-        x = 1.0 / x;
-        filename = "dat_X00_1.dat";
-    }
-    else {
-        x = 1.0 / x;
-        filename = "dat_X1_00.dat";
-    }
+        // Вибір файлу таблиці залежно від x
+        if (x <= 1)
+            filename = "dat_X_1_1.dat";
+        else if (x < -1) {
+            x = 1.0 / x;
+            filename = "dat_X00_1.dat";
+        }
+        else {
+            x = 1.0 / x;
+            filename = "dat_X1_00.dat";
+        }
 
-    if (!readTable(filename, table)) {
+        if (!readTable(filename, table)) {
+            ok = false;
+            return { 0, 0 };
+        }
+
+        ok = true;
+        return interpolate(table, x);
+    }
+    catch (const exception& e) {
+        cerr << "Exception in get_T_U: " << e.what() << endl;
         ok = false;
         return { 0, 0 };
     }
-
-    ok = true;
-    return interpolate(table, x);
 }
 
 // ======== Функції для роботи з T(x) і U(x) ========
@@ -152,11 +160,18 @@ double fun(double x, double y, double z) {
 
 // ======== main: введення і виведення ========
 int main() {
-    double x, y, z;
-    cout << "Enter x, y, z: ";
-    cin >> x >> y >> z;
+    try {
+        double x, y, z;
+        cout << "Enter x, y, z: ";
+        if (!(cin >> x >> y >> z))
+            throw runtime_error("Invalid input");
 
-    double result = fun(x, y, z);
-    cout << "fun(x, y, z) = " << result << endl;
+        double result = fun(x, y, z);
+        cout << "fun(x, y, z) = " << result << endl;
+    }
+    catch (const exception& e) {
+        cerr << "Error: " << e.what() << endl;
+        return 1;
+    }
     return 0;
 }
